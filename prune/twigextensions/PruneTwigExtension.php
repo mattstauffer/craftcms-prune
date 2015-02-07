@@ -39,7 +39,7 @@ class PruneTwigExtension extends \Twig_Extension
     }
 
 	/**
-	 * Convert an EntryModel into an array with the specified fields
+	 * Convert a BaseModel into an array with the specified fields
 	 *
 	 * @param array  $input  The content being filtered
 	 * @param array  $fields An array of the fields to keep
@@ -61,30 +61,38 @@ class PruneTwigExtension extends \Twig_Extension
 
 		$output = array();
 
-		foreach ($input as $entry) {
-			if ( ! ($entry instanceof EntryModel)) {
+		foreach ($input as $element) {
+			if ( ! ($element instanceof BaseModel)) {
 				continue;
 			}
 
-			$output[] = $this->returnPrunedArray($entry);
+			$output[] = $this->returnPrunedArray($element);
 		}
 
 		return $output;
 	}
 
 	/**
-	 * Given an EntryModel, return an array with only requested fields
+	 * Given a BaseModel, return an array with only requested fields
 	 *
-	 * @param EntryModel $item
+	 * @param BaseModel $item
 	 * @return array
 	 */
-	protected function returnPrunedArray(EntryModel $item)
+	protected function returnPrunedArray(BaseModel $item)
 	{
 		$new_item = array();
 
 		foreach ($this->fields as $key) {
 			if (isset($item->{$key})) {
-				$new_item[$key] = $item->{$key};
+				if(is_object($item->{$key}) && method_exists($item->{$key}, 'attributeNames')) {
+					$new_item[$key] = new \stdClass();
+					foreach($item->{$key}->attributeNames() as $attribute) {
+						 $new_item[$key]->$attribute = $item->{$key}->{$attribute};
+					} 
+				}
+				else {
+					$new_item[$key] = $item->{$key};
+				}
 			}
 		}
 
