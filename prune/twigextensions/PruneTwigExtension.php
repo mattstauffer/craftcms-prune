@@ -84,7 +84,16 @@ class PruneTwigExtension extends \Twig_Extension
 
 		foreach ($this->fields as $key) {
 			if (isset($item->{$key})) {
-				if(is_object($item->{$key}) && method_exists($item->{$key}, 'attributeNames')) {
+				if(is_object($item->{$key}) && method_exists($item->{$key}, 'first')) {
+					$asset = $item->{$key}->first();
+
+					if(is_object($asset) && method_exists($asset, 'getUrl') ) {
+						$new_item[$key] = $asset->getUrl();
+					} else {
+						$new_item[$key] = null;
+					}
+				}
+				else if(is_object($item->{$key}) && method_exists($item->{$key}, 'attributeNames')) {
 					$new_item[$key] = new \stdClass();
 					foreach($item->{$key}->attributeNames() as $attribute) {
 						 $new_item[$key]->$attribute = $item->{$key}->{$attribute};
