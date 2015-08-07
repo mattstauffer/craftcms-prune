@@ -84,13 +84,35 @@ class PruneTwigExtension extends \Twig_Extension
 
 		foreach ($this->fields as $key) {
 			if (isset($item->{$key})) {
-				if(is_object($item->{$key}) && method_exists($item->{$key}, 'first')) {
-					$asset = $item->{$key}->first();
+				if(is_object($item->{$key}) && method_exists($item->{$key}, 'getElementType')) {
+					$element_type = get_class($item->{$key}->getElementType());
+					if($element_type == 'Craft\MatrixBlockElementType') {
+						$children = $item->{$key}->getChildren();
 
-					if(is_object($asset) && method_exists($asset, 'getUrl') ) {
-						$new_item[$key] = $asset->getUrl();
-					} else {
-						$new_item[$key] = null;
+						if(is_object($children) && $children->first()) {
+							$fields = array();
+							foreach ($children as $child) {
+								$content = array();
+								foreach($child->getContent() as $key=>$value) {
+									if(!preg_match('/id|locale|elementId|title/', $key)) {
+										$content[$key] = $value;
+									}
+								}
+								array_push($fields, $content);
+							}
+							$new_item[$key] = $fields;
+						} else {
+							$new_item[$key] = null;
+						}
+					}
+					if($element_type == 'Craft\AssetElementType') {
+						$asset = $item->{$key}->first();
+
+						if(is_object($asset) && method_exists($asset, 'getUrl') ) {
+							$new_item[$key] = $asset->getUrl();
+						} else {
+							$new_item[$key] = null;
+						}
 					}
 				}
 				else if(is_object($item->{$key}) && method_exists($item->{$key}, 'attributeNames')) {
