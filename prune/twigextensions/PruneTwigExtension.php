@@ -93,9 +93,9 @@ class PruneTwigExtension extends \Twig_Extension
 							$fields = array();
 							foreach ($children as $child) {
 								$content = array();
-								foreach($child->getContent() as $key=>$value) {
-									if(!preg_match('/id|locale|elementId|title/', $key)) {
-										$content[$key] = $value;
+								foreach($child->getContent() as $content_key=>$value) {
+									if(!preg_match('/id|locale|elementId|title/', $content_key)) {
+										$content[$content_key] = $value;
 									}
 								}
 								array_push($fields, $content);
