@@ -46,7 +46,7 @@ class PruneTwigExtension extends \Twig_Extension
 	 * @return array
 	 * @throws Exception
 	 */
-	public function prune(array $input, array $fields)
+	public function prune(array $input, array $fields, $key = null)
     {
 		if ( ! is_array($fields)) {
 			throw new Exception(Craft::t('Map parameter needs to be an array.'));
@@ -66,7 +66,13 @@ class PruneTwigExtension extends \Twig_Extension
 				continue;
 			}
 
-			$output[] = $this->returnPrunedArray($element);
+			if($key) {
+				$element_array = $this->returnPrunedArray($element);
+				$key_value = $element_array[$key];
+				$output[$key_value] = $element_array;
+			} else {
+				$output[] = $this->returnPrunedArray($element);
+			}
 		}
 
 		return $output;
