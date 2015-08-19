@@ -68,7 +68,7 @@ class PruneTwigExtension extends \Twig_Extension
 
 			if($key) {
 				$element_array = $this->returnPrunedArray($element);
-				$key_value = $element_array[$key];
+				$key_value = trim($element_array[$key]);
 				$output[$key_value] = $element_array;
 			} else {
 				$output[] = $this->returnPrunedArray($element);
