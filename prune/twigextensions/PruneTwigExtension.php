@@ -89,7 +89,7 @@ class PruneTwigExtension extends \Twig_Extension
 		$new_item = array();
 
 		foreach ($this->fields as $key) {
-			if (isset($item->{$key})) {
+			if (is_string($key) && isset($item->{$key})) {
 				if(is_object($item->{$key}) && method_exists($item->{$key}, 'getElementType')) {
 					$element_type = get_class($item->{$key}->getElementType());
 					if($element_type == 'Craft\MatrixBlockElementType') {
@@ -129,6 +129,28 @@ class PruneTwigExtension extends \Twig_Extension
 				}
 				else {
 					$new_item[$key] = $item->{$key};
+				}
+			}
+			else if(is_array($key)) {
+				$child_field;
+				foreach($key as $k => $fields) {
+					$child_field = $fields;
+					$key = $k;
+				}
+				if(is_object($item->{$key}) && method_exists($item->{$key}, 'getElementType')) {
+					$element_type = get_class($item->{$key}->getElementType());
+					if($element_type == 'Craft\EntryElementType') {
+						$children = $item->{$key}->getChildren();
+						if(is_object($children) && $children->first()) {
+							$fields = array();
+							foreach ($children as $child) {
+								array_push($fields, $child->getContent()->{$child_field[0]});
+							}
+							$new_item[$key] = $fields;
+						} else {
+							$new_item[$key] = null;
+						}
+					}
 				}
 			}
 		}
