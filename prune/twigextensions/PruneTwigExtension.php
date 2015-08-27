@@ -46,7 +46,7 @@ class PruneTwigExtension extends \Twig_Extension
 	 * @return array
 	 * @throws Exception
 	 */
-	public function prune(array $input, array $fields)
+	public function prune(array $input, array $fields, $key = null)
     {
 		if ( ! is_array($fields)) {
 			throw new Exception(Craft::t('Map parameter needs to be an array.'));
@@ -66,7 +66,13 @@ class PruneTwigExtension extends \Twig_Extension
 				continue;
 			}
 
-			$output[] = $this->returnPrunedArray($element);
+			if($key) {
+				$element_array = $this->returnPrunedArray($element);
+				$key_value = trim($element_array[$key], " \t\n\r\0\x0B\xC2\xA0");
+				$output[$key_value] = $element_array;
+			} else {
+				$output[] = $this->returnPrunedArray($element);
+			}
 		}
 
 		return $output;
@@ -83,8 +89,42 @@ class PruneTwigExtension extends \Twig_Extension
 		$new_item = array();
 
 		foreach ($this->fields as $key) {
-			if (isset($item->{$key})) {
-				if(is_object($item->{$key}) && method_exists($item->{$key}, 'attributeNames')) {
+			if (is_string($key) && isset($item->{$key})) {
+				if(is_object($item->{$key}) && method_exists($item->{$key}, 'getElementType')) {
+					$element_type = get_class($item->{$key}->getElementType());
+					if($element_type == 'Craft\MatrixBlockElementType') {
+						$children = $item->{$key}->getChildren();
+
+						if(is_object($children) && $children->first()) {
+							$fields = array();
+							foreach ($children as $child) {
+								$content = array();
+								foreach($child->getContent() as $content_key=>$value) {
+									if(!preg_match('/id|locale|elementId|title/', $content_key)) {
+										$content[$content_key] = $value;
+									}
+								}
+								array_push($fields, $content);
+							}
+							$new_item[$key] = $fields;
+						} else {
+							$new_item[$key] = null;
+						}
+					}
+					if($element_type == 'Craft\AssetElementType') {
+						$asset = $item->{$key}->first();
+
+						if(is_object($asset) && method_exists($asset, 'getUrl') ) {
+							$new_item[$key] = $asset->getUrl();
+						} else {
+							$new_item[$key] = null;
+						}
+					}
+					if($element_type == 'Craft\CategoryElementType') {
+						$new_item[$key] = $item->{$key}->first()->title;
+					}
+				}
+				else if(is_object($item->{$key}) && method_exists($item->{$key}, 'attributeNames')) {
 					$new_item[$key] = new \stdClass();
 					foreach($item->{$key}->attributeNames() as $attribute) {
 						 $new_item[$key]->$attribute = $item->{$key}->{$attribute};
@@ -92,6 +132,28 @@ class PruneTwigExtension extends \Twig_Extension
 				}
 				else {
 					$new_item[$key] = $item->{$key};
+				}
+			}
+			else if(is_array($key)) {
+				$child_field;
+				foreach($key as $k => $fields) {
+					$child_field = $fields;
+					$key = $k;
+				}
+				if(is_object($item->{$key}) && method_exists($item->{$key}, 'getElementType')) {
+					$element_type = get_class($item->{$key}->getElementType());
+					if($element_type == 'Craft\EntryElementType') {
+						$children = $item->{$key}->getChildren();
+						if(is_object($children) && $children->first()) {
+							$fields = array();
+							foreach ($children as $child) {
+								array_push($fields, $child->getContent()->{$child_field[0]});
+							}
+							$new_item[$key] = $fields;
+						} else {
+							$new_item[$key] = null;
+						}
+					}
 				}
 			}
 		}
