@@ -120,6 +120,9 @@ class PruneTwigExtension extends \Twig_Extension
 							$new_item[$key] = null;
 						}
 					}
+					if($element_type == 'Craft\CategoryElementType') {
+						$new_item[$key] = $item->{$key}->first()->title;
+					}
 				}
 				else if(is_object($item->{$key}) && method_exists($item->{$key}, 'attributeNames')) {
 					$new_item[$key] = new \stdClass();
